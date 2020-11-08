@@ -174,6 +174,7 @@ try:
     from urllib.request import HTTPCookieProcessor, Request, build_opener
     from urllib.parse import quote, unquote
     from http.cookiejar import MozillaCookieJar
+    import json
 except ImportError:
     # Fallback for Python 2
     from urllib2 import Request, build_opener, HTTPCookieProcessor
@@ -324,28 +325,16 @@ class ScholarArticle(object):
     def set_citation_data(self, citation_data):
         self.citation_data = citation_data
 
-    def as_txt(self):
+    def as_json(self):
         # Get items sorted in specified order:
         items = sorted(list(self.attrs.values()), key=lambda item: item[2])
         # Find largest label length:
         max_label_len = max([len(str(item[1])) for item in items])
-        fmt = '%%%ds %%s' % max_label_len
-        res = []
+        res = {}
         for item in items:
             if item[0] is not None:
-                res.append(fmt % (item[1], item[0]))
-        return '\n'.join(res)
-
-    def as_csv(self, header=False, sep='|'):
-        # Get keys sorted in specified order:
-        keys = [pair[0] for pair in \
-                sorted([(key, val[2]) for key, val in list(self.attrs.items())],
-                       key=lambda pair: pair[1])]
-        res = []
-        if header:
-            res.append(sep.join(keys))
-        res.append(sep.join([unicode(self.attrs[key][0]) for key in keys]))
-        return '\n'.join(res)
+                res[item[1]] = item[0]
+        return res
 
     def as_citation(self):
         """
@@ -443,7 +432,7 @@ class ScholarArticleParser(object):
                     if not hasattr(tag2, 'name'):
                         continue
                     if tag2.name == 'span' and \
-                       self._tag_has_class(tag2, 'gs_fl'):
+                            self._tag_has_class(tag2, 'gs_fl'):
                         self._parse_links(tag2)
 
     def _parse_links(self, span):
@@ -501,7 +490,7 @@ class ScholarArticleParser(object):
     @staticmethod
     def _tag_results_checker(tag):
         return tag.name == 'div' \
-            and ScholarArticleParser._tag_has_class(tag, 'gs_r')
+               and ScholarArticleParser._tag_has_class(tag, 'gs_r')
 
     @staticmethod
     def _as_int(obj):
@@ -707,8 +696,8 @@ class ClusterScholarQuery(ScholarQuery):
     know about.
     """
     SCHOLAR_CLUSTER_URL = ScholarConf.SCHOLAR_SITE + '/scholar?' \
-        + 'cluster=%(cluster)s' \
-        + '%(num)s'
+                          + 'cluster=%(cluster)s' \
+                          + '%(num)s'
 
     def __init__(self, cluster=None):
         ScholarQuery.__init__(self)
@@ -746,19 +735,19 @@ class SearchScholarQuery(ScholarQuery):
     configure on the Scholar website, in the advanced search options.
     """
     SCHOLAR_QUERY_URL = ScholarConf.SCHOLAR_SITE + '/scholar?' \
-        + 'as_q=%(words)s' \
-        + '&as_epq=%(phrase)s' \
-        + '&as_oq=%(words_some)s' \
-        + '&as_eq=%(words_none)s' \
-        + '&as_occt=%(scope)s' \
-        + '&as_sauthors=%(authors)s' \
-        + '&as_publication=%(pub)s' \
-        + '&as_ylo=%(ylo)s' \
-        + '&as_yhi=%(yhi)s' \
-        + '&as_vis=%(citations)s' \
-        + '&btnG=&hl=en' \
-        + '%(num)s' \
-        + '&as_sdt=%(patents)s%%2C5'
+                        + 'as_q=%(words)s' \
+                        + '&as_epq=%(phrase)s' \
+                        + '&as_oq=%(words_some)s' \
+                        + '&as_eq=%(words_none)s' \
+                        + '&as_occt=%(scope)s' \
+                        + '&as_sauthors=%(authors)s' \
+                        + '&as_publication=%(pub)s' \
+                        + '&as_ylo=%(ylo)s' \
+                        + '&as_yhi=%(yhi)s' \
+                        + '&as_vis=%(citations)s' \
+                        + '&btnG=&hl=en' \
+                        + '%(num)s' \
+                        + '&as_sdt=%(patents)s%%2C5'
 
     def __init__(self):
         ScholarQuery.__init__(self)
@@ -824,9 +813,9 @@ class SearchScholarQuery(ScholarQuery):
 
     def get_url(self):
         if self.words is None and self.words_some is None \
-           and self.words_none is None and self.phrase is None \
-           and self.author is None and self.pub is None \
-           and self.timeframe[0] is None and self.timeframe[1] is None:
+                and self.words_none is None and self.phrase is None \
+                and self.author is None and self.pub is None \
+                and self.timeframe[0] is None and self.timeframe[1] is None:
             raise QueryArgumentError('search query needs more parameters')
 
         # If we have some-words or none-words lists, we need to
@@ -911,18 +900,18 @@ class ScholarQuerier(object):
 
     # Default URLs for visiting and submitting Settings pane, as of 3/14
     GET_SETTINGS_URL = ScholarConf.SCHOLAR_SITE + '/scholar_settings?' \
-        + 'sciifh=1&hl=en&as_sdt=0,5'
+                       + 'sciifh=1&hl=en&as_sdt=0,5'
 
     SET_SETTINGS_URL = ScholarConf.SCHOLAR_SITE + '/scholar_setprefs?' \
-        + 'q=' \
-        + '&scisig=%(scisig)s' \
-        + '&inststart=0' \
-        + '&as_sdt=1,5' \
-        + '&as_sdtp=' \
-        + '&num=%(num)s' \
-        + '&scis=%(scis)s' \
-        + '%(scisf)s' \
-        + '&hl=en&lang=all&instq=&inst=569367360547434339&save='
+                       + 'q=' \
+                       + '&scisig=%(scisig)s' \
+                       + '&inststart=0' \
+                       + '&as_sdt=1,5' \
+                       + '&as_sdtp=' \
+                       + '&num=%(num)s' \
+                       + '&scis=%(scis)s' \
+                       + '%(scisf)s' \
+                       + '&hl=en&lang=all&instq=&inst=569367360547434339&save='
 
     # Older URLs:
     # ScholarConf.SCHOLAR_SITE + '/scholar?q=%s&hl=en&btnG=Search&as_sdt=2001&as_sdtp=on
@@ -946,7 +935,7 @@ class ScholarQuerier(object):
 
         # If we have a cookie file, load it:
         if ScholarConf.COOKIE_JAR_FILE and \
-           os.path.exists(ScholarConf.COOKIE_JAR_FILE):
+                os.path.exists(ScholarConf.COOKIE_JAR_FILE):
             try:
                 self.cjar.load(ScholarConf.COOKIE_JAR_FILE,
                                ignore_discard=True)
@@ -1106,38 +1095,9 @@ class ScholarQuerier(object):
             ScholarUtils.log('info', err_msg + ': %s' % err)
             return None
 
+def as_json(querier):
+    return [article.as_json() for article in querier.articles]
 
-def txt(querier, with_globals):
-    if with_globals:
-        # If we have any articles, check their attribute labels to get
-        # the maximum length -- makes for nicer alignment.
-        max_label_len = 0
-        if len(querier.articles) > 0:
-            items = sorted(list(querier.articles[0].attrs.values()),
-                           key=lambda item: item[2])
-            max_label_len = max([len(str(item[1])) for item in items])
-
-        # Get items sorted in specified order:
-        items = sorted(list(querier.query.attrs.values()), key=lambda item: item[2])
-        # Find largest label length:
-        max_label_len = max([len(str(item[1])) for item in items] + [max_label_len])
-        fmt = '[G] %%%ds %%s' % max(0, max_label_len-4)
-        for item in items:
-            if item[0] is not None:
-                print(fmt % (item[1], item[0]))
-        if len(items) > 0:
-            print
-
-    articles = querier.articles
-    for art in articles:
-        print(encode(art.as_txt()) + '\n')
-
-def csv(querier, header=False, sep='|'):
-    articles = querier.articles
-    for art in articles:
-        result = art.as_csv(header=header, sep=sep)
-        print(encode(result))
-        header = False
 
 def citation_export(querier):
     articles = querier.articles
@@ -1195,14 +1155,6 @@ scholar.py -c 5 -a "albert einstein" -t --none "quantum theory" --after 1970"""
 
     group = optparse.OptionGroup(parser, 'Output format',
                                  'These options control the appearance of the results.')
-    group.add_option('--txt', action='store_true',
-                     help='Print article data in text format (default)')
-    group.add_option('--txt-globals', action='store_true',
-                     help='Like --txt, but first print global results too')
-    group.add_option('--csv', action='store_true',
-                     help='Print article data in CSV form (separator is "|")')
-    group.add_option('--csv-header', action='store_true',
-                     help='Like --csv, but print header with column names')
     group.add_option('--citation', metavar='FORMAT', default=None,
                      help='Print article details in standard citation format. Argument Must be one of "bt" (BibTeX), "en" (EndNote), "rm" (RefMan), or "rw" (RefWorks).')
     parser.add_option_group(group)
@@ -1239,8 +1191,8 @@ scholar.py -c 5 -a "albert einstein" -t --none "quantum theory" --after 1970"""
     # makes no sense to have search arguments:
     if options.cluster_id is not None:
         if options.author or options.allw or options.some or options.none \
-           or options.phrase or options.title_only or options.pub \
-           or options.after or options.before:
+                or options.phrase or options.title_only or options.pub \
+                or options.after or options.before:
             print('Cluster ID queries do not allow additional search arguments.')
             return 1
 
@@ -1291,20 +1243,7 @@ scholar.py -c 5 -a "albert einstein" -t --none "quantum theory" --after 1970"""
         query.set_num_page_results(options.count)
 
     querier.send_query(query)
-
-    if options.csv:
-        csv(querier)
-    elif options.csv_header:
-        csv(querier, header=True)
-    elif options.citation is not None:
-        citation_export(querier)
-    else:
-        txt(querier, with_globals=options.txt_globals)
-
-    if options.cookie_file:
-        querier.save_cookies()
-
-    return 0
+    return as_json(querier)
 
 if __name__ == "__main__":
     sys.exit(main())
